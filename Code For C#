@@ -1,0 +1,482 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Coding.Models
+{
+    public class Applicant
+    {
+        public int ApplicantId { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
+        public string Phone {  get; set; }
+        public string Resume { get; set; }
+        public Applicant() { }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Coding.Models
+{
+    public class Company
+    {
+        public int CompanyID { get; set; }
+        public string CompanyName { get; set; }
+        public string Location { get; set; }
+        public Company() { }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Coding.Models
+{
+    public class JobApplication
+    {
+        public int ApplicationID { get; set; }
+        public JobListing jobs { get; set; }
+        public Applicant applicant { get; set; }
+        public DateTime ApplicationDate { get; set; }
+        public string CoverLetter { get; set; }
+        public JobApplication() { }
+    }
+
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Coding.Models
+{
+    public class JobListing
+    {
+        public int JobID { get; set; }
+        public int CompanyID { get; set; }
+        public string JobTitle { get; set; }
+        public string JobDescription { get; set; }
+        public string JobLocation { get; set; }
+        public decimal Salary {  get; set; }
+        public string JobType { get; set; }
+        public string PostedDate { get; set; }
+        public JobListing()
+        {
+
+        }
+        
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Coding.Models
+{
+    internal class ProductException : Exception
+    {
+        public ProductException(string message) : base(message) { } 
+    }
+    public class InvalidEmailFormatException : Exception
+    {
+        public InvalidEmailFormatException(string message) : base(message) { }
+    }
+    public class NegativeSalaryException : Exception
+    {
+        public NegativeSalaryException(string message) : base(message) { }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Coding.Models;
+using System.Data.SqlClient;
+
+namespace Coding.Data
+{
+    public class DatabaseManager : IDatabaseManager
+    {
+        SqlConnection con = null;
+        SqlCommand command = null;
+
+        public int InsertJobListing(JobListing jobListing)
+        {
+            int rowsAffected = 0;
+            string query = $"Insert into jobs(job_id, company_id, job_title, job_description, job_location, salary, job_type, posted_date) values (@jid, @cid, @jt, @jdes, @jloc, @sal, @jtype, @pdate)";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@jid", jobListing.JobID));
+                    command.Parameters.Add(new SqlParameter("@cid", jobListing.CompanyID));
+                    command.Parameters.Add(new SqlParameter("@jt", jobListing.JobTitle));
+                    command.Parameters.Add(new SqlParameter("@jdes", jobListing.JobDescription));
+                    command.Parameters.Add(new SqlParameter("@jloc", jobListing.JobLocation));
+                    command.Parameters.Add(new SqlParameter("@sal", jobListing.Salary));
+                    command.Parameters.Add(new SqlParameter("@jtype", jobListing.JobType));
+                    command.Parameters.Add(new SqlParameter("@pdate", jobListing.PostedDate));
+                    rowsAffected = command.ExecuteNonQuery();
+                }
+                if (rowsAffected <= 0)
+                {
+                    throw new ProductException("Job Could not be Listed");
+
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in adding the JobsList" + ex.Message);
+            }
+            return rowsAffected;
+        }
+        public int InsertCompany(Company company)
+        {
+            int rowsAffected = 0;
+            string query = $"Insert into companies(comapny_id, company_name, location) values (@cyid, @cname, @lct)";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@cyid", company.CompanyID));
+                    command.Parameters.Add(new SqlParameter("@cname", company.CompanyName));
+                    command.Parameters.Add(new SqlParameter("@lct", company.Location));
+                    rowsAffected = command.ExecuteNonQuery();
+                }
+                if (rowsAffected <= 0)
+                {
+                    throw new ProductException("Company Could not be Listed");
+
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in adding the CompanyList" + ex.Message);
+            }
+            return rowsAffected;
+        }
+        public int InsertJobApplication(JobApplication jobApplication)
+        {
+            int rowsAffected = 0;
+            string query = $"Insert into Applications(application_id, job_id, applicant_id, application_date, cover_letter) values (@apid, @jid, @aid, @adate, @cl)";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@apid", jobApplication.ApplicationID));
+                    command.Parameters.Add(new SqlParameter("@jid", jobApplication.jobs.JobID));
+                    command.Parameters.Add(new SqlParameter("@aid", jobApplication.applicant.ApplicantId ));
+                    command.Parameters.Add(new SqlParameter("@adate", jobApplication.ApplicationDate));
+                    command.Parameters.Add(new SqlParameter("@cl", jobApplication.CoverLetter));
+                    rowsAffected = command.ExecuteNonQuery();
+                }
+                if (rowsAffected <= 0)
+                {
+                    throw new ProductException("JobApllication Could not be Added");
+
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in adding the JobApplication" + ex.Message);
+            }
+            return rowsAffected;
+        }
+        public int InsertApplicant(Applicant applicant)
+        {
+            int rowsAffected = 0;
+            string query = $"Insert into Applicants(applicant_id, first_name, last_name, email, phone, resume) values (@aid, @fname, @lname, @email, @ph, @res)";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@aid", applicant.ApplicantId));
+                    command.Parameters.Add(new SqlParameter("@fname", applicant.FirstName));
+                    command.Parameters.Add(new SqlParameter("@lname", applicant.LastName));
+                    command.Parameters.Add(new SqlParameter("@email", applicant.Email));
+                    command.Parameters.Add(new SqlParameter("@ph", applicant.Phone));
+                    command.Parameters.Add(new SqlParameter("@res", applicant.Resume));
+                    rowsAffected = command.ExecuteNonQuery();
+                }
+                if (rowsAffected <= 0)
+                {
+                    throw new ProductException("Applicant Could not be Addedd");
+
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in adding the ApplicantList" + ex.Message);
+            }
+            return rowsAffected;
+        }
+        public List<JobListing> GetJobListings()
+        {
+            List<JobListing> jobs = new List<JobListing>();
+            JobListing jobListing = null;
+            string query = "Select * from jobs";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        jobListing = new JobListing();
+                        jobListing.JobID = reader.GetInt32(0);
+                        jobListing.CompanyID = reader.GetInt32(1);
+                        jobListing.JobTitle = reader.GetString(2);
+                        jobListing.JobDescription = reader.GetString(3);
+                        jobListing.JobLocation = reader.GetString(4);
+                        jobListing.Salary = reader.GetDecimal(5);
+                        jobListing.JobType = reader.GetString(6);
+                        jobListing.PostedDate = reader.GetString(7);
+                        jobs.Add(jobListing);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in getting Jobs Table");
+            }
+            return jobs;
+        }
+        public List<Company> GetCompanies()
+        {
+            List<Company> companies = new List<Company>();
+            Company company = null;
+            string query = "Select * from companies";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        company = new Company();
+                        company.CompanyID = reader.GetInt32(0);
+                        company.CompanyName = reader.GetString(1);
+                        company.Location = reader.GetString(2);
+                        companies.Add(company);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in getting Jobs Table");
+            }
+            return companies;
+        }
+        public List<Applicant> GetApplicants()
+        {
+            List<Applicant> applicants = new List<Applicant>();
+            Applicant applicant = null;
+            string query = "Select * from applicants";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        applicant = new Applicant();
+                        applicant.ApplicantId = reader.GetInt32(0);
+                        applicant.FirstName = reader.GetString(1);
+                        applicant.LastName = reader.GetString(2);
+                        applicant.Email = reader.GetString(3);
+                        applicant.Phone = reader.GetString(4);
+                        applicant.Resume = reader.GetString(5);
+                        applicants.Add(applicant);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in getting Applicants Table");
+            }
+            return applicants;
+        }
+        public List<JobApplication> GetApplicationsForJob()
+        {
+            List<JobApplication> applications = new List<JobApplication>();
+            JobApplication jobapplication = null;
+            string query = "Select * from applications";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        jobapplication = new JobApplication();
+                        jobapplication.ApplicationID = reader.GetInt32(0);
+                        jobapplication.jobs = new JobListing();
+                        jobapplication.jobs.JobID = reader.GetInt32(1);
+                        jobapplication.applicant = new Applicant();
+                        jobapplication.applicant.ApplicantId = reader.GetInt32(2);
+                        jobapplication.ApplicationDate = reader.GetDateTime(3);
+                        jobapplication.CoverLetter = reader.GetString(4);
+                        applications.Add(jobapplication);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in getting Jobs Table");
+            }
+            return applications;
+        }
+
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Data.SqlClient;
+using System.Data;
+
+namespace Coding.Data
+{
+    public class DBUtility
+    {
+        static readonly string constring = @"Data Source =BENIHARISON\SQLEXPRESS ; Initial Catalog = hex ; Integrated Security = True ; MultipleActiveResultSets=true;";
+        public static SqlConnection GetConnection()
+        {
+            SqlConnection connectionObject = new SqlConnection(constring);
+            try
+            {
+                connectionObject.Open();
+                return connectionObject;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error Opening The Connection : {ex.Message}");
+                return null;
+            }
+        }
+        public static void CloseDBConnection(SqlConnection connectionObject)
+        {
+            if (connectionObject != null)
+            {
+
+                try
+                {
+
+                    if (connectionObject.State != System.Data.ConnectionState.Open)
+                    {
+                        connectionObject.Close();
+                        connectionObject.Dispose();
+                        Console.WriteLine("Connection Closed. ");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error Closing Connection {e.Message}");
+                }
+
+            }
+            else
+            {
+                Console.WriteLine("Connection is Already null");
+            }
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Coding.Models;
+
+namespace Coding.Data
+{
+    public interface IDatabaseManager
+    {
+        public int InsertJobListing (JobListing jobListing);
+        public int InsertCompany(Company company);
+        public int InsertApplicant(Applicant applicant);
+        public int InsertJobApplication (JobApplication jobApplication);
+        List<JobListing> GetJobListings();
+        List<Company> GetCompanies();
+        List<Applicant> GetApplicants();
+        List<JobApplication> GetApplicationsForJob();
+    }
+}
+using Coding.Data;
+
+namespace Coding
+
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            UserInterface ui = new UserInterface();
+            ui.ShowMenu();
+            
+        }
+    }
+}
+
+
+
+
+
+
+
