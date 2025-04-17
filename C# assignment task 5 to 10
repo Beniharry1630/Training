@@ -1,0 +1,1343 @@
+using ADOAsgn.Data;
+using ADOAsgn.Models;
+using static System.Console;
+using static ADOAsgn.Data.IStudentManagement;
+using ADOAsgn.Data;
+
+
+namespace ADOAsgn
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            UserInterface ui = new UserInterface();
+            ui.ShowMenu();
+        }
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using static ADOAsgn.Data.IStudentManagement;
+using ADOAsgn.Models;
+using System.Data;
+
+namespace ADOAsgn.Data
+{
+    public class UserInterface
+    {
+        IStudentManagement dao = new StudentMangementdao();
+
+        public void ShowMenu()
+        {
+            int choice = 0;
+            do
+            {
+                Console.WriteLine("\n------ Student Information System ------");
+                Console.WriteLine("1. Add Student");
+                Console.WriteLine("2. Add Course");
+                Console.WriteLine("3. Enroll Student");
+                Console.WriteLine("4. View All Students");
+                Console.WriteLine("5. View All Courses");
+                Console.WriteLine("6. View All Enrollments");
+                Console.WriteLine("7. Add Teacher");
+                Console.WriteLine("8. View All Teachers");
+                Console.WriteLine("9. Add Payment");
+                Console.WriteLine("10. View All Payments");
+                Console.WriteLine("11. To Get Student");
+                Console.WriteLine("12. To Get Course");
+                Console.WriteLine("13. To Get Enrollment");
+                Console.WriteLine("14. To Get Teacher");
+                Console.WriteLine("15. To Get Payment");
+                Console.WriteLine("16. Delete Student By Id");
+                Console.WriteLine("17. Delete Course By Id");
+                Console.WriteLine("18. Delete Enrollment By Id");
+                Console.WriteLine("19. Exit");
+                Console.Write("Enter your choice: ");
+                if (!int.TryParse(Console.ReadLine(), out choice)) continue;
+
+                switch (choice)
+                {
+                    case 1:
+                        AddStudent();
+                        break;
+                    case 2:
+                        AddCourse();
+                        break;
+                    case 3:
+                        AddEnrollment();
+                        break;
+                    case 4:
+                        DisplayStudents();
+                        break;
+                    case 5:
+                        DisplayCourses();
+                        break;
+                    case 6:
+                        DisplayEnrollments();
+                        break;
+                    case 7:
+                        AddTeacher();
+                        break;
+                    case 8:
+                        DisplayTeachers();
+                        break;
+                    case 9:
+                        AddPayment();
+                        break;
+                    case 10:
+                        DisplayPayments();
+                        break;
+                    case 11:
+                        GetStudentById();
+                        break;
+                    case 12:
+                        GetCourseById();
+                        break;
+                    case 13:
+                        GetEnrollmentById();
+                        break;
+                    case 14:
+                        GetTeacherById();
+                        break;
+                    case 15:
+                        GetPaymentById();
+                        break;
+                    case 16:
+                        RemoveStudentById();
+                        break;
+                    case 17:
+                        RemoveCourseById();
+                        break;
+                    case 18:
+                        RemoveEnrollmentById();
+                        break;
+                    case 19:
+                        Console.WriteLine("Exiting...");
+                        break;
+                    default:
+                        Console.WriteLine("Invalid option");
+                        break;
+                }
+
+            } while (choice != 19);
+        }
+        private void AddStudent()
+        {
+            try
+            {
+                Console.Write("Student ID: ");
+                if (!int.TryParse(Console.ReadLine(), out int id) || id <= 0)
+                {
+                    Console.WriteLine("Invalid or negative Student ID.");
+                    return;
+                }
+                Console.Write("First Name: ");
+                string fname = Console.ReadLine();
+                Console.Write("Last Name: ");
+                string lname = Console.ReadLine();
+                Console.Write("Email: ");
+                string email = Console.ReadLine();
+                Console.Write("Phone: ");
+                string phone = Console.ReadLine();
+
+                Student s = new Student(id, fname, lname, email, phone);
+                dao.AddStudent(s);
+                Console.WriteLine("Student added successfully!");
+            }
+            catch (Exception ex) { Console.WriteLine( ex.Message ); }
+            finally { DisplayStudents(); }
+        }
+
+        private void AddCourse()
+        {
+            try
+            {
+                Console.Write("Course ID: ");
+                if (!int.TryParse(Console.ReadLine(), out int id) || id <= 0)
+                {
+                    Console.WriteLine("Invalid or negative Course ID.");
+                    return;
+                }
+                Console.Write("Course Code: ");
+                string code = Console.ReadLine();
+                Console.Write("Course Name: ");
+                string name = Console.ReadLine();
+                Console.Write("Instructor: ");
+                string inst = Console.ReadLine();
+
+                Course c = new Course(id, code, name, inst);
+                dao.AddCourse(c);
+                Console.WriteLine("Course added successfully!");
+            }
+            catch (Exception ex) { Console.WriteLine(ex.Message); }
+            finally { DisplayCourses(); }
+        }
+
+        private void AddEnrollment()
+        {
+            try
+            {
+
+
+                Console.Write("Enrollment ID: ");
+                if (!int.TryParse(Console.ReadLine(), out int eid) || eid <= 0)
+                {
+                    Console.WriteLine("Invalid or negative Enrollment ID.");
+                    return;
+                }
+
+                Console.Write("Student ID: ");
+                int sid = int.Parse(Console.ReadLine());
+                Console.Write("Course ID: ");
+                int cid = int.Parse(Console.ReadLine());
+                Console.Write("Enrollment Date (yyyy-mm-dd): ");
+                string date = Console.ReadLine();
+
+                Enrollment e = new Enrollment(eid, new Student { StudentId = sid }, new Course { CourseId = cid }, date);
+                dao.AddEnrollment(e);
+                Console.WriteLine("Enrollment added successfully!");
+
+            }
+            catch (Exception ex) { Console.WriteLine(ex.Message); }
+            finally { DisplayEnrollments(); }
+
+
+        }
+
+        private void DisplayStudents()
+        {
+            var students = dao.GetAllStudents();
+            Console.WriteLine("Student List:");
+            foreach (var student in students)
+            {
+                Console.WriteLine(student);
+            }
+        }
+
+        private void DisplayCourses()
+        {
+            var courses = dao.GetAllCourses();
+            Console.WriteLine("Course List:");
+            foreach (var course in courses)
+            {
+                Console.WriteLine($"{course.CourseId} | {course.CourseCode} | {course.CourseName} | {course.Instructor}");
+            }
+        }
+
+        private void DisplayEnrollments()
+        {
+            var enrollments = dao.GetAllEnrollments();
+            Console.WriteLine("Enrollment List:");
+            foreach (var e in enrollments)
+            {
+                Console.WriteLine($"EnrollmentId: {e.EnrollmentId}, StudentId: {e.Student.StudentId}, CourseId: {e.Course.CourseId}, Date: {e.EnrollmentDate}");
+            }
+        }
+        private void AddTeacher()
+        {
+            try
+            {
+                Console.Write("Teacher ID: ");
+                if (!int.TryParse(Console.ReadLine(), out int id) || id <= 0)
+                {
+                    Console.WriteLine("Invalid or negative Teacher ID.");
+                    return;
+                }
+                Console.Write("Teacher Name: ");
+                string name = Console.ReadLine();
+                Console.Write("Email: ");
+                string email = Console.ReadLine();
+
+                Teacher t = new Teacher(id, name, email);
+                dao.AddTeacher(t);
+                Console.WriteLine("Teacher added successfully!");
+            }
+            catch (Exception ex) { Console.WriteLine(ex.Message); }
+            finally { DisplayTeachers(); }
+        }
+
+        private void DisplayTeachers()
+        {
+            var teachers = dao.GetAllTeachers();
+            Console.WriteLine("Teacher List:");
+            foreach (var t in teachers)
+            {
+                Console.WriteLine($"TeacherId : {t.TeacherId}, TeacherName : {t.TeacherName}, Email : {t.Email}");
+            }
+        }
+
+        private void AddPayment()
+        {
+            try
+            {
+                Console.Write("Payment ID: ");
+                if (!int.TryParse(Console.ReadLine(), out int pid) || pid <= 0)
+                {
+                    Console.WriteLine("Invalid or negative Payment ID.");
+                    return;
+                }
+                Console.Write("Student ID: ");
+                int sid = int.Parse(Console.ReadLine());
+                Console.Write("Amount: ");
+                decimal amt = decimal.Parse(Console.ReadLine());
+                Console.Write("Payment Date (yyyy-mm-dd): ");
+                string pdate = Console.ReadLine();
+
+                Payment p = new Payment(pid, new Student { StudentId = sid }, amt, pdate);
+                dao.AddPayment(p);
+                Console.WriteLine("Payment added successfully!");
+            }
+            catch (Exception ex) { Console.WriteLine(ex.Message); }
+            finally { DisplayPayments(); }
+
+        }
+
+        private void DisplayPayments()
+        {
+            var payments = dao.GetAllPayments();
+            Console.WriteLine("Payment List:");
+            foreach (var p in payments)
+            {
+                Console.WriteLine($"PaymentId: {p.PaymentId}, StudentId: {p.Student.StudentId}, Amount: {p.Amount}, Date: {p.PaymentDate:yyyy-MM-dd}");
+            }
+        }
+        private void GetStudentById()
+        {
+            Console.Write("Enter Student ID: ");
+            int id = int.Parse(Console.ReadLine());
+            try
+            {
+                var student = dao.GetStudentById(id);
+                Console.WriteLine($"{student.StudentId}, {student.FirstName}, {student.LastName}, {student.Email}, {student.PhoneNumber}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        private void GetCourseById()
+        {
+            Console.Write("Enter Course ID: ");
+            int id = int.Parse(Console.ReadLine());
+            try
+            {
+                var course = dao.GetCourseById(id);
+                Console.WriteLine($"{course.CourseId}, {course.CourseCode}, {course.CourseName}, {course.Instructor}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        private void GetEnrollmentById()
+        {
+            Console.Write("Enter Enrollment ID: ");
+            int id = int.Parse(Console.ReadLine());
+            try
+            {
+                var enrollment = dao.GetEnrollmentById(id);
+                Console.WriteLine($"{enrollment.EnrollmentId}, {enrollment.Student.StudentId}, {enrollment.Course.CourseId}, {enrollment.EnrollmentDate}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        private void GetTeacherById()
+        {
+            Console.Write("Enter Teacher ID: ");
+            int id = int.Parse(Console.ReadLine());
+            try
+            {
+                var teacher = dao.GetTeacherById(id);
+                Console.WriteLine($"{teacher.TeacherId}, {teacher.TeacherName}, {teacher.Email}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        private void GetPaymentById()
+        {
+            Console.Write("Enter Teacher ID: ");
+            int id = int.Parse(Console.ReadLine());
+            try
+            {
+                var payment = dao.GetPaymentById(id);
+                Console.WriteLine($"{payment.PaymentId}, {payment.Student.StudentId}, {payment.Amount}, {payment.PaymentDate}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        private void RemoveStudentById()
+        {
+            try
+            {
+                DisplayStudents();
+                Console.Write("Enter Student ID From Student List to remove: ");
+                if (!int.TryParse(Console.ReadLine(), out int id) || id <= 0)
+                {
+                    Console.WriteLine("Invalid or negative Student ID.");
+                    return;
+                }
+                dao.RemoveStudent(id);
+                Console.WriteLine("Student removed successfully!");
+            }
+            catch (Exception ex) {Console.WriteLine(ex.Message); }  
+        }
+
+        private void RemoveCourseById()
+        {
+            try
+            {
+                DisplayCourses();
+                Console.Write("Enter Course ID From Course List to remove: ");
+                if (!int.TryParse(Console.ReadLine(), out int id) || id <= 0)
+                {
+                    Console.WriteLine("Invalid or negative Student ID.");
+                    return;
+                }
+                dao.RemoveCourse(id);
+                Console.WriteLine("Course removed successfully!");
+            }
+            catch (Exception ex) {Console.WriteLine(ex.Message);}
+        }
+
+        private void RemoveEnrollmentById()
+        {
+            try
+            {
+                DisplayEnrollments();
+                Console.Write("Enter Enrollment ID From Enrollment List to remove: ");
+                if (!int.TryParse(Console.ReadLine(), out int id) || id <= 0)
+                {
+                    Console.WriteLine("Invalid or negative Student ID.");
+                    return;
+                }
+                dao.RemoveEnrollment(id);
+                Console.WriteLine("Enrollment removed successfully!");
+            }catch (Exception ex) {Console.WriteLine(ex.Message);}
+        }
+
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Data.SqlClient;
+using ADOAsgn.Models;
+using static ADOAsgn.Data.DBUtility;
+using System.Security.Principal;
+
+
+namespace ADOAsgn.Data
+{
+    public class StudentMangementdao : IStudentManagement
+    {
+        SqlConnection con = null;
+        SqlCommand command = null;
+
+        public int AddStudent(Student student)
+        {
+            int rowsAffected = 0;
+            string query = $"insert into Student(student_id,first_name,last_name, email, phone_number) values (@sid, @fname, @lname, @email, @pnum)";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@sid", student.StudentId));
+                    command.Parameters.Add(new SqlParameter("@fname", student.FirstName));
+                    command.Parameters.Add(new SqlParameter("@lname", student.LastName));
+                    command.Parameters.Add(new SqlParameter("@email", student.Email));
+                    command.Parameters.Add(new SqlParameter("@pnum", student.PhoneNumber));
+                    rowsAffected = command.ExecuteNonQuery();
+                }
+                if (rowsAffected <= 0)
+                {
+                    throw new ProductException("Student Could not be added");
+
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in adding the Student"+ ex.Message);
+            }
+            return rowsAffected;
+        }
+        public int AddCourse(Course course)
+        {
+            int rowsAffected = 0;
+            string query = $"insert into Course(course_id, course_code, course_name, instructor ) values (@cid, @code, @cname, @inst)";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@cid", course.CourseId));
+                    command.Parameters.Add(new SqlParameter("@code", course.CourseCode));
+                    command.Parameters.Add(new SqlParameter("@cname", course.CourseName));
+                    command.Parameters.Add(new SqlParameter("@inst", course.Instructor));
+                    rowsAffected = command.ExecuteNonQuery();
+                }
+                if (rowsAffected <= 0)
+                {
+                    throw new ProductException("Course Could not be added");
+
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in adding the Course");
+            }
+            return rowsAffected;
+        }
+        public int AddEnrollment(Enrollment enrollment)
+        {
+            int rowsAffected = 0;
+            string query = $"insert into Enrollment(enrollment_id, student_id, course_id, enrollment_date ) values (@eid, @sid, @cid, @edate)";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@eid", enrollment.EnrollmentId));
+                    command.Parameters.Add(new SqlParameter("@sid", enrollment.Student.StudentId));
+                    command.Parameters.Add(new SqlParameter("@cid", enrollment.Course.CourseId));
+                    command.Parameters.Add(new SqlParameter("@edate", enrollment.EnrollmentDate));
+                    rowsAffected = command.ExecuteNonQuery();
+                }
+                if (rowsAffected <= 0)
+                {
+                    throw new ProductException("Enrollment Could not be added");
+
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in adding the Enrollment");
+            }
+            return rowsAffected;
+        }
+        public int AddTeacher(Teacher teacher)
+        {
+            int rowsAffected = 0;
+            string query = $"insert into Teacher(teacher_id, teacher_name, email ) values (@tid, @tname, @email)";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@tid", teacher.TeacherId));
+                    command.Parameters.Add(new SqlParameter("@tname", teacher.TeacherName));
+                    command.Parameters.Add(new SqlParameter("@email", teacher.Email));
+                    rowsAffected = command.ExecuteNonQuery();
+                }
+                if (rowsAffected <= 0)
+                {
+                    throw new ProductException("Teacher Could not be added");
+
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in adding the Teacher");
+            }
+            return rowsAffected;
+        }
+        public int AddPayment(Payment payment)
+        {
+            int rowsAffected = 0;
+            string query = $"insert into Payment(payment_id, student_id, amount, payment_date ) values (@pid, @sid, @amt, @pdate)";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@pid", payment.PaymentId));
+                    command.Parameters.Add(new SqlParameter("@sid", payment.Student.StudentId));
+                    command.Parameters.Add(new SqlParameter("@amt", payment.Amount));
+                    command.Parameters.Add(new SqlParameter("@pdate", payment.PaymentDate));
+                    rowsAffected = command.ExecuteNonQuery();
+                }
+                if (rowsAffected <= 0)
+                {
+                    throw new ProductException("Payment Could not be added");
+
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in adding the Payment");
+            }
+            return rowsAffected;
+        }
+        public List<Student> GetAllStudents()
+        {
+            List<Student> students = new List<Student>();
+            Student student = null;
+            string query = "Select * from Student";
+
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        student = new Student();
+                        student.StudentId = reader.GetInt32(0);
+                        student.FirstName = reader.GetString(1);
+                        student.LastName = reader.GetString(2);
+                        student.Email = reader.GetString(3);
+                        student.PhoneNumber = reader.GetString(4);
+                        students.Add(student);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in getting Student Table");
+            }
+            return students;
+        }
+        public List<Course> GetAllCourses()
+        {
+            List<Course> courses = new List<Course>();
+            Course course = null;
+            string query = "Select * from Course";
+
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        course = new Course();
+                        course.CourseId = reader.GetInt32(0);
+                        course.CourseCode = reader.GetString(1);
+                        course.CourseName = reader.GetString(2);
+                        course.Instructor = reader.GetString(3);
+                        courses.Add(course);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch(Exception ex)
+            {
+                throw new ProductException("Error in getting Course Table");
+            }
+            return courses;
+        }
+        public List<Enrollment> GetAllEnrollments()
+        {
+            List<Enrollment> enrollments = new List<Enrollment>();
+            Enrollment enrollment = null;
+            string query = "Select * from Enrollment";
+
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        enrollment = new Enrollment();
+                        enrollment.EnrollmentId = reader.GetInt32(0);
+                        enrollment.Student = new Student();
+                        enrollment.Student.StudentId = reader.GetInt32(1);
+                        enrollment.Course = new Course();
+                        enrollment.Course.CourseId = reader.GetInt32(2);
+                        enrollment.EnrollmentDate = reader.GetString(3);
+                        enrollments.Add(enrollment);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in getting Enrollment Table");
+            }
+            return enrollments;
+        }
+        public List<Teacher> GetAllTeachers()
+        {
+            List<Teacher> teachers = new List<Teacher>();
+            Teacher teacher = null;
+            string query = "Select * from Teacher";
+
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        teacher = new Teacher();
+                        teacher.TeacherId= reader.GetInt32(0);
+                        teacher.TeacherName = reader.GetString(1);
+                        teacher.Email = reader.GetString(2);
+                        teachers.Add(teacher);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in getting Teacher Table");
+            }
+            return teachers;
+        }
+        public List<Payment> GetAllPayments()
+        {
+            List<Payment> payments = new List<Payment>();
+            Payment payment = null;
+            string query = "Select * from Payment";
+
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        payment = new Payment();
+                        payment.PaymentId = reader.GetInt32(0);
+                        payment.Student = new Student();
+                        payment.Student.StudentId = reader.GetInt32(1);
+                        payment.PaymentDate = reader.GetString(3);
+                        payments.Add(payment);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in getting Payment Table");
+            }
+            return payments;
+        }
+        public int RemoveStudent(int id)
+        {
+            int rowsAffected = 0;
+            string query = "delete from Student where student_id = @id";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@id", id));
+                    rowsAffected = command.ExecuteNonQuery();
+                    if (rowsAffected <= 0)
+                    {
+                        throw new ProductException("Id not found, Could Not Delete the Student");
+
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in deleting the Student");
+            }
+            return rowsAffected;
+
+        }
+        public int RemoveCourse(int id)
+        {
+            int rowsAffected = 0;
+            string query = "delete from Course where course_id = @id";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@id", id));
+                    rowsAffected = command.ExecuteNonQuery();
+                    if (rowsAffected <= 0)
+                    {
+                        throw new ProductException("Id not found, Could Not Delete the Course");
+
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in deleting the Course");
+            }
+            return rowsAffected;
+
+        }
+        public int RemoveEnrollment(int id)
+        {
+            int rowsAffected = 0;
+            string query = "delete from enrollment where enrollment_id = @id";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@id", id));
+                    rowsAffected = command.ExecuteNonQuery();
+                    if (rowsAffected <= 0)
+                    {
+                        throw new ProductException("Id not found, Could Not Delete the Student");
+
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw ;
+            }
+            catch (Exception ex)
+            {
+                throw new ProductException("Error in deleting the Student");
+            }
+            return rowsAffected;
+
+        }
+        public Student GetStudentById(int id)
+        {
+            Student student = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "select * from Student where student_id=@id";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.AddWithValue("@id", id);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        student = new Student();
+                        student.StudentId = (int)reader["student_id"];
+                        student.FirstName = (string)reader["first_name"];
+                        student.LastName = (string)reader["last_name"];
+                        student.Email = (string)reader["email"];
+                        student.PhoneNumber = (string)reader["phone_number"];
+
+                    }
+                }
+                if (student == null)
+                {
+                    throw new ProductException("Id not found");
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching  with the given id:" + ex.Message);
+            }
+            return student;
+        }
+        public Course GetCourseById(int id)
+        {
+            Course course = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "select * from course where course_id=@id";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.AddWithValue("@id", id);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        course = new Course();
+                        course.CourseId = (int)reader["course_id"];
+                        course.CourseCode = (string)reader["course_code"];
+                        course.CourseName = (string)reader["course_name"];
+                        course.Instructor = (string)reader["instructor"];
+                    }
+                }
+                if (course == null)
+                {
+                    throw new ProductException("Id not found");
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching course with the given id:" + ex.Message);
+            }
+            return course;
+        }
+        public Enrollment GetEnrollmentById(int id)
+        {
+            Enrollment enrollment = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "select * from enrollment where enrollment_id=@id";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.AddWithValue("@id", id);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        enrollment = new Enrollment();
+                        enrollment.EnrollmentId = (int)reader["enrollment_id"];
+                        enrollment.Student = new Student();
+                        enrollment.Student.StudentId = (int)reader["student_id"];
+                        enrollment.Course = new Course();
+                        enrollment.Course.CourseId = (int)reader["course_id"];
+                        enrollment.EnrollmentDate = (string)reader["enrollment_date"];
+                    }
+                }
+                if (enrollment == null)
+                {
+                    throw new ProductException("Id not found");
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching Enrollment with the given id:" + ex.Message);
+            }
+            return enrollment;
+        }
+        public Teacher GetTeacherById(int id)
+        {
+            Teacher teacher = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "select * from teacher where teacher_id=@id";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.AddWithValue("@id", id);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        teacher = new Teacher();
+                        teacher.TeacherId = (int)reader["teacher_id"];
+                        teacher.TeacherName = (string)reader["teacher_name"];
+                        teacher.Email = (string)reader["email"];
+                    }
+                }
+                if (teacher == null)
+                {
+                    throw new ProductException("Id not found");
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching teacher" +
+                    " with the given id:" + ex.Message);
+            }
+            return teacher;
+        }
+        public Payment GetPaymentById(int id)
+        {
+            Payment payment = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "select * from payment where payment_id=@id";
+            try
+            {
+                using (con = DBUtility.GetConnection())
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.AddWithValue("@id", id);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        payment = new Payment();
+                        payment.PaymentId = (int)reader["payment_id"];
+                        payment.Student = new Student();
+                        payment.Student.StudentId = (int)reader["student_id"];
+                        payment.Amount = (decimal)reader["amount"];
+                        payment.PaymentDate = (string)reader["payment_date"];
+                    }
+                }
+                if (payment == null)
+                {
+                    throw new ProductException("Id not found");
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching paymentt with the given id:" + ex.Message);
+            }
+            return payment;
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using ADOAsgn.Models;
+
+namespace ADOAsgn.Data
+{
+    public interface IStudentManagement
+    {
+        int AddStudent(Student student);
+        int AddCourse(Course course);
+        int AddEnrollment(Enrollment enrollment);
+        int AddTeacher(Teacher teacher);
+        int AddPayment(Payment payment);
+        List<Student> GetAllStudents();
+        List<Course> GetAllCourses();
+        List<Enrollment> GetAllEnrollments();
+        List<Teacher> GetAllTeachers();
+        List<Payment> GetAllPayments();
+        int RemoveStudent(int studentId);
+        int RemoveCourse(int courseId);
+        int RemoveEnrollment(int enrollmentId);
+        Student GetStudentById(int id);
+        Course GetCourseById(int id);
+        Enrollment GetEnrollmentById(int id);
+        Teacher GetTeacherById(int id);
+        Payment GetPaymentById(int id);
+
+       
+
+
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Data.SqlClient;
+using System.Data;
+using System.Linq.Expressions;
+
+namespace ADOAsgn.Data
+{
+    public class DBUtility
+    {
+        static readonly string constring = @"Data Source =BENIHARISON\SQLEXPRESS ; Initial Catalog = hex ; Integrated Security = True ; MultipleActiveResultSets=true;";
+        public static SqlConnection GetConnection()
+        {
+            SqlConnection connectionObject = new SqlConnection(constring);
+            try
+            {
+                connectionObject.Open();
+                return connectionObject;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error Opening The Connection : {ex.Message}");
+                return null;
+            }
+        }
+        public static void CloseDBConnection (SqlConnection connectionObject)
+        {
+            if (connectionObject != null)
+            {
+
+                try
+                { 
+            
+                    if(connectionObject.State != System.Data.ConnectionState.Open)
+                    {
+                        connectionObject.Close();
+                        connectionObject.Dispose();
+                        Console.WriteLine("Connection Closed. ");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Error Closing Connection {e.Message}");
+                }
+
+            }
+            else
+            {
+                Console.WriteLine("Connection is Already null");
+            }
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ADOAsgn.Models
+{
+    public class Course
+    {
+        public int CourseId { get; set; }
+        public string CourseCode { get; set; }
+        public string CourseName { get; set; }
+        public string Instructor { get; set; }
+
+        public List<Enrollment> Enrollments { get; set; }  = new List<Enrollment>();
+
+        public Course()
+        { }
+        public Course(int courseId, string courseCode, string courseName, string instructor)
+        {
+            CourseId = courseId;
+            CourseCode = courseCode;
+            CourseName = courseName;
+            Instructor = instructor;
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ADOAsgn.Models
+{
+    public class Enrollment
+    {
+        public int EnrollmentId { get; set; }
+        public Student Student { get; set; }
+        public Course Course { get; set; }
+        public string EnrollmentDate { get; set; }
+
+        public Enrollment() { }
+        public Enrollment (int enrollmentId,  Student student, Course course, string enrollmentDate)
+        {
+            EnrollmentId = enrollmentId;
+            Student = student;
+            Course = course;
+            EnrollmentDate = enrollmentDate;
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ADOAsgn.Models
+{
+    public class Payment
+    {
+        public int PaymentId { get; set; }
+        public Student Student { get; set; }
+        public decimal Amount { get; set; }
+        public string PaymentDate { get; set; }
+        public Payment() { }
+        public Payment (int  paymentId, Student student, decimal amount, string paymentDate)
+        {
+            PaymentId = paymentId;
+            Student = student;
+            Amount = amount;
+            PaymentDate = paymentDate;
+
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ADOAsgn.Models
+{
+    internal class ProductException : Exception
+    {
+        public ProductException() : base() { }
+        public ProductException(string message) : base(message) { }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ADOAsgn.Models
+{
+    public class Student
+    {
+        public int StudentId { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email {  get; set; }
+        public string PhoneNumber { get; set; }
+        public List<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
+
+        public Student ()
+        {
+
+        }
+        public Student (int studentId, string firstName,  string lastName, string email, string phoneNumber)
+        {
+            StudentId = studentId;
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+            PhoneNumber = phoneNumber;
+        }
+        public override string ToString()
+        {
+            return $"{StudentId} {FirstName} {LastName} {Email} {PhoneNumber}";
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ADOAsgn.Models
+{
+    public class Student
+    {
+        public int StudentId { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email {  get; set; }
+        public string PhoneNumber { get; set; }
+        public List<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
+
+        public Student ()
+        {
+
+        }
+        public Student (int studentId, string firstName,  string lastName, string email, string phoneNumber)
+        {
+            StudentId = studentId;
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+            PhoneNumber = phoneNumber;
+        }
+        public override string ToString()
+        {
+            return $"{StudentId} {FirstName} {LastName} {Email} {PhoneNumber}";
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ADOAsgn.Models
+{
+    public class Student
+    {
+        public int StudentId { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email {  get; set; }
+        public string PhoneNumber { get; set; }
+        public List<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
+
+        public Student ()
+        {
+
+        }
+        public Student (int studentId, string firstName,  string lastName, string email, string phoneNumber)
+        {
+            StudentId = studentId;
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+            PhoneNumber = phoneNumber;
+        }
+        public override string ToString()
+        {
+            return $"{StudentId} {FirstName} {LastName} {Email} {PhoneNumber}";
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
