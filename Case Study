@@ -1,0 +1,1163 @@
+// Class Vehicle
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CaseStudy.Entity
+{
+    public class Vehicle
+    {
+        public int VehicleId { get; set; }
+        public string Make {  get; set; }
+        public string Model { get; set; }
+        public string Year { get; set; }
+        public decimal DailyRate { get; set; }
+        public string Status { get; set; }
+        public decimal PassengerCapacity { get; set; }
+        public decimal EngineCapacity { get; set; }
+        public Vehicle() { }
+
+        public Vehicle (int vehicleId, string make, string model, string year, decimal dailyRate, string status, decimal passengerCapacity, decimal engineCapacity)
+        {
+            VehicleId = vehicleId;
+            Make = make;
+            Model = model;
+            Year = year;
+            DailyRate = dailyRate;
+            Status = status;
+            PassengerCapacity = passengerCapacity;
+            EngineCapacity = engineCapacity;
+        }
+
+
+    }
+}
+// Class Lease
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CaseStudy.Entity
+{
+    public class Lease
+    {
+        public int LeaseId { get; set; }
+        public int VehicleId { get; set; }
+        public int CustomerId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string Type { get; set; }
+        public Lease() { }
+
+        public Lease (int leaseId, int vehicleId, int customerId, DateTime startDate, DateTime endDate, string type)
+        {
+            LeaseId = leaseId;
+            VehicleId = vehicleId;
+            CustomerId = customerId;
+            StartDate = startDate;
+            EndDate = endDate;
+            Type = type;
+        }
+    }
+}
+// class Customer
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CaseStudy.Entity
+{
+    public class Customer
+    {
+        public int CustomerId { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
+        public decimal PhoneNumber { get; set; }
+        public Customer() { }
+
+        public Customer(int customerId, string firstName, string lastName, string email, decimal phoneNumber )
+        {
+            CustomerId = customerId;
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+            PhoneNumber = phoneNumber;
+
+        }
+    }
+}
+// Class Payment
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CaseStudy.Entity
+{
+    public class Payment
+    {
+        public int PaymentId { get; set; }
+        public int LeaseId { get; set; }
+        public DateTime PaymentDate { get; set; }
+        public decimal Amount { get; set; }
+        public Payment ()
+        {
+
+        }
+
+        public Payment(int paymentId, int leaseId, DateTime paymentDate, decimal amount)
+        {
+            PaymentId = paymentId;
+            LeaseId = leaseId;
+            PaymentDate = paymentDate;
+            Amount = amount;
+        }
+    }
+}
+// Exceptions
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CaseStudy.myexception
+{
+        public class CarNotFoundException : Exception
+        {
+            public CarNotFoundException() { }
+
+            public CarNotFoundException(string message) : base(message) { }
+        }
+
+        public class LeaseNotFoundException : Exception
+        {
+            public LeaseNotFoundException() { }
+
+            public LeaseNotFoundException(string message) : base(message) { }
+        }
+        public class CustomerNotFoundException : Exception
+        {
+            public CustomerNotFoundException() { }
+
+            public CustomerNotFoundException(string message) : base(message) { }
+        }
+    public class PaymentException : Exception
+    {
+        public PaymentException() { }
+
+        public PaymentException(string message) : base(message) { }
+    }
+}
+// DB Connection
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+
+namespace CaseStudy.Util
+{
+    public static class DBPropertyUtil
+    {
+        public static string GetConnectionString(string filePath)
+        {
+            Dictionary<string, string> properties = new Dictionary<string, string>();
+
+            try
+            {
+                if (!File.Exists(filePath))
+                {
+                    throw new FileNotFoundException($"Properties file not found at: {filePath}");
+                }
+
+                foreach (var line in File.ReadAllLines(filePath))
+                {
+                    if (!string.IsNullOrWhiteSpace(line) && line.Contains('='))
+                    {
+                        var parts = line.Split('=', 2);
+                        properties[parts[0].Trim()] = parts[1].Trim();
+                    }
+                }
+
+                if (!properties.ContainsKey("db.url"))
+                {
+                    throw new KeyNotFoundException($"Missing 'db.url' key in properties file: {filePath}");
+                }
+
+                return properties["db.url"];
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading db.properties: " + ex.Message);
+                throw;
+            }
+        }
+    }
+}
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Data.SqlClient;
+using System.Linq.Expressions;
+
+namespace CaseStudy.Util
+{
+    public class DBConnUtil
+    {
+        public static SqlConnection GetConnection(string connectionString)
+        {
+            try
+            {
+                SqlConnection con = new SqlConnection(connectionString);
+                con.Open();
+                return con;
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error Connrcting To the Database: {ex.Message}");
+                return null;
+            }
+        }
+    }
+}
+// properties file
+db.url=Data Source=BENIHARISON\SQLEXPRESS;Initial Catalog=cs;Integrated Security=True;MultipleActiveResultSets=true;
+// DAO
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CaseStudy.Entity;
+using CaseStudy.myexception;
+using System.Data.SqlClient;
+using CaseStudy.Util;
+using System.Net;
+
+
+namespace CaseStudy.Dao
+{
+    public class CarLeasesRepositoryImpl : ICarLeaseRepository
+    {
+        private List<Vehicle> vehicles = new List<Vehicle>();
+        private List<Customer> customers = new List<Customer>();
+        private List<Lease> leases = new List<Lease>();
+        private List<Payment> payments = new List<Payment>();
+        SqlConnection con = null;
+        SqlCommand command = null;
+
+        //Car Management
+        public void AddVehicle(Vehicle vehicle)
+        {
+            int rowsAffected = 0;
+            string query = $"Insert into cars( vehicle_id, make, model, year, daily_rate, status, passenger_capacity, engine_capacity) values (@vid, @mk, @md, @ya, @dr, @st, @pc, @ec)";
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@vid", vehicle.VehicleId));
+                    command.Parameters.Add(new SqlParameter("@mk", vehicle.Make));
+                    command.Parameters.Add(new SqlParameter("@md", vehicle.Model));
+                    command.Parameters.Add(new SqlParameter("@ya", vehicle.Year));
+                    command.Parameters.Add(new SqlParameter("@dr", vehicle.DailyRate));
+                    command.Parameters.Add(new SqlParameter("@st", vehicle.Status));
+                    command.Parameters.Add(new SqlParameter("@pc", vehicle.PassengerCapacity));
+                    command.Parameters.Add(new SqlParameter("@ec", vehicle.EngineCapacity));
+                    rowsAffected = command.ExecuteNonQuery();
+                    Console.WriteLine("Vehicle Has Been Added");
+                }
+                if (rowsAffected <= 0)
+                {
+                    Console.WriteLine("Car Has not been Added");
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            catch (Exception ex)
+            {
+                throw new CarNotFoundException("Error in adding the Car" + ex.Message);
+            }
+        }
+        public void RemoveVehicle(int vehicleId)
+        {
+            int rowsAffected = 0;
+            string query = "delete from cars where vehicle_id = @vid";
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@vid", vehicleId));
+                    rowsAffected = command.ExecuteNonQuery();
+                    if (rowsAffected <= 0)
+                    {
+                        Console.WriteLine("Car Has not been Deleted");
+                    }
+                    Console.WriteLine("Car has been sucessfully deleted");
+
+                }
+
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            catch (Exception ex)
+            {
+                throw new CarNotFoundException("Error in Deleting the Car" + ex.Message);
+
+            }
+        }
+        public Vehicle FindVehicleById(int vehicleId)
+        {
+            Vehicle vehicle = null;
+            string query = "select * from cars where vehicle_id = @vid";
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.AddWithValue("@vid", vehicleId);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        vehicle = new Vehicle();
+                        vehicle.VehicleId = (int)reader["vehicle_id"];
+                        vehicle.Make = (string)reader["make"];
+                        vehicle.Model = (string)reader["model"];
+                        vehicle.Year = (string)reader["year"];
+                        vehicle.DailyRate = (decimal)reader["daily_rate"];
+                        vehicle.Status = (string)reader["status"];
+                        vehicle.PassengerCapacity = (decimal)reader["passenger_capacity"];
+                        vehicle.EngineCapacity = (decimal)reader["engine_capacity"];
+                    }
+                }
+                if (vehicle == null)
+                {
+                    Console.WriteLine("Car Not Found");
+                }
+
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.ToString());
+
+            }
+            catch (Exception ex)
+            {
+                throw new CarNotFoundException("Error in Fetching the Car with the given id:" + ex.Message);
+
+            }
+            return vehicle;
+        }
+        public List<Vehicle> ListAvailableVehicles()
+        {
+            List<Vehicle> vehicles = new List<Vehicle>();
+            Vehicle vehicle = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "SELECT * FROM cars WHERE status = 'available'";
+
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        vehicle = new Vehicle();
+                        vehicle.VehicleId = reader.GetInt32(0);
+                        vehicle.Make = reader.GetString(1);
+                        vehicle.Model = reader.GetString(2);
+                        vehicle.Year = reader.GetString(3);
+                        vehicle.DailyRate = reader.GetDecimal(4);
+                        vehicle.Status = reader.GetString(5);
+                        vehicle.PassengerCapacity = reader.GetDecimal(6);
+                        vehicle.EngineCapacity = reader.GetDecimal(7);
+
+                        vehicles.Add(vehicle);
+                    }
+                    Console.WriteLine("All cars are displayed");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching available vehicles: " + ex.Message);
+                throw;
+            }
+
+            return vehicles;
+        }
+        //Customer Management
+
+        public void AddCustomer(Customer customer)
+        {
+            int rowsAffected = 0;
+            string query = $"Insert into customer( customer_id, first_name, last_name, email, phone_number) values (@cid, @fn, @ln, @ea, @pn)";
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@cid", customer.CustomerId));
+                    command.Parameters.Add(new SqlParameter("@fn", customer.FirstName));
+                    command.Parameters.Add(new SqlParameter("@ln", customer.LastName));
+                    command.Parameters.Add(new SqlParameter("@ea", customer.Email));
+                    command.Parameters.Add(new SqlParameter("@pn", customer.PhoneNumber));
+                    rowsAffected = command.ExecuteNonQuery();
+                    Console.WriteLine("Customer Has Been Added");
+                }
+                if (rowsAffected <= 0)
+                {
+                    Console.WriteLine("Customer Has not been Added");
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new CarNotFoundException("Error in adding the Customer" + ex.Message);
+            }
+        }
+        public void RemoveCustomer(int customerId)
+        {
+            int rowsAffected = 0;
+            string query = "delete from customer where customer_id = @cid";
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@cid", customerId));
+                    rowsAffected = command.ExecuteNonQuery();
+                    if (rowsAffected <= 0)
+                    {
+                        Console.WriteLine("Customer Has not been Deleted");
+                    }
+                    Console.WriteLine("Customer has been deleted !");
+
+                }
+
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            catch (Exception ex)
+            {
+                throw new CarNotFoundException("Error in Deleting the Customer" + ex.Message);
+
+            }
+        }
+        public List<Customer> ListCustomers()
+        {
+            List<Customer> customers = new List<Customer>();
+            Customer customer = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "SELECT * FROM customer";
+
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        customer = new Customer();
+                        customer.CustomerId = reader.GetInt32(0);
+                        customer.FirstName = reader.GetString(1);
+                        customer.LastName = reader.GetString(2);
+                        customer.Email = reader.GetString(3);
+                        customer.PhoneNumber = reader.GetDecimal(4);
+                        customers.Add(customer);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching available Customers: " + ex.Message);
+                throw;
+            }
+
+            return customers;
+        }
+        public Customer FindCustomerById(int customerId)
+        {
+            Customer customer = null;
+            string query = "select * from customer where customer_id = @cid";
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    command.Parameters.AddWithValue("@cid", customerId);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        customer = new Customer();
+                        customer.CustomerId = reader.GetInt32(0);
+                        customer.FirstName = reader.GetString(1);
+                        customer.LastName = reader.GetString(2);
+                        customer.Email = reader.GetString(3);
+                        customer.PhoneNumber = reader.GetDecimal(4);
+
+                    }
+                }
+                if (customer == null)
+                {
+                    Console.WriteLine("Customer Not Found");
+                }
+
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.ToString());
+
+            }
+            catch (Exception ex)
+            {
+                throw new CarNotFoundException("Error in Fetching the Customer with the given id:" + ex.Message);
+
+            }
+            return customer;
+        }
+        //Lease Mangement
+        public Lease CreateLease(int leaseId, int vehicleId, int customerId, DateTime startDate, DateTime endDate, string type)
+        {
+            Lease lease = new Lease(leaseId, vehicleId, customerId, startDate, endDate, type);
+
+            string insertLeaseQuery = "INSERT INTO Lease (lease_id, vehicle_id, customer_id, start_date, end_date, type) " +
+                                      "VALUES (@lid, @vid, @cid, @sd, @ed, @tp)";
+            string updateVehicleStatusQuery = "UPDATE cars SET status = 'notavailable' WHERE vehicle_id = @vid";
+
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    // Insert the lease
+                    command = new SqlCommand(insertLeaseQuery, con);
+                    command.Parameters.AddWithValue("@lid", lease.LeaseId);
+                    command.Parameters.AddWithValue("@vid", lease.VehicleId);
+                    command.Parameters.AddWithValue("@cid", lease.CustomerId);
+                    command.Parameters.AddWithValue("@sd", lease.StartDate);
+                    command.Parameters.AddWithValue("@ed", lease.EndDate);
+                    command.Parameters.AddWithValue("@tp", lease.Type);
+
+                    int rowsAffected = command.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                    {
+                        Console.WriteLine("Lease has been created successfully.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Lease creation failed.");
+                    }
+
+                    // Update the vehicle status to 'notavailable'
+                    command = new SqlCommand(updateVehicleStatusQuery, con);
+                    command.Parameters.AddWithValue("@vid", lease.VehicleId);
+                    int updateRows = command.ExecuteNonQuery();
+
+                    if (updateRows <= 0)
+                    {
+                        Console.WriteLine("Vehicle status was not updated to 'notavailable'.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Vehicle status updated to 'notavailable'.");
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            catch (Exception ex)
+            {
+                throw new LeaseNotFoundException("Error creating lease: " + ex.Message);
+            }
+
+            return lease;
+        }
+        public List<Lease> ListActiveLeases()
+        {
+            List<Lease> activeLeases = new List<Lease>();
+            Lease lease = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "SELECT * FROM lease WHERE end_date >= GETDATE()";
+
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        lease = new Lease();
+                        lease.LeaseId = reader.GetInt32(0);
+                        lease.CustomerId = reader.GetInt32(2);
+                        lease.VehicleId = reader.GetInt32(1);
+                        lease.StartDate = reader.GetDateTime(3);
+                        lease.EndDate = reader.GetDateTime(4);
+                        lease.Type = reader.GetString(5);
+
+                        activeLeases.Add(lease);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching active leases: " + ex.Message);
+                throw;
+            }
+
+            return activeLeases;
+        }
+        public List<Lease> ListLeaseHistory()
+        {
+            List<Lease> leases = new List<Lease>();
+            Lease lease = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "SELECT * FROM lease";
+
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        lease = new Lease();
+                        lease.LeaseId = reader.GetInt32(0);
+                        lease.VehicleId = reader.GetInt32(1);
+                        lease.CustomerId = reader.GetInt32(2);
+                        lease.StartDate = reader.GetDateTime(3);
+                        lease.EndDate = reader.GetDateTime(4);
+                        lease.Type = reader.GetString(5);
+                        leases.Add(lease);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching Lease History: " + ex.Message);
+                throw;
+            }
+
+            return leases;
+        }
+
+
+        public Lease ReturnVehicle(int leaseId)
+        {
+            Lease lease = null;
+            string leaseQuery = "SELECT * FROM lease WHERE lease_id = @lid";
+            string updateVehicleStatusQuery = "UPDATE cars SET status = 'available' WHERE vehicle_id = @vid";
+
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    // Fetch lease details
+                    command = new SqlCommand(leaseQuery, con);
+                    command.Parameters.AddWithValue("@lid", leaseId);
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (reader.Read())
+                    {
+                        lease = new Lease
+                        {
+                            LeaseId = (int)reader["lease_id"],
+                            VehicleId = (int)reader["vehicle_id"],
+                            CustomerId = (int)reader["customer_id"],
+                            StartDate = Convert.ToDateTime(reader["start_date"]),
+                            EndDate = Convert.ToDateTime(reader["end_date"]),
+                            Type = (string)reader["type"]
+                        };
+                    }
+                    reader.Close();
+
+                    if (lease == null)
+                    {
+                        throw new LeaseNotFoundException("Lease Not Found");
+                    }
+
+                    // Update vehicle status to "available"
+                    command = new SqlCommand(updateVehicleStatusQuery, con);
+                    command.Parameters.AddWithValue("@vid", lease.VehicleId);
+                    int rowsAffected = command.ExecuteNonQuery();
+
+                    if (rowsAffected <= 0)
+                    {
+                        Console.WriteLine("Vehicle status was not updated.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Vehicle status updated to 'available'.");
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            catch (Exception ex)
+            {
+                throw new CarNotFoundException("Error in returning the vehicle: " + ex.Message);
+            }
+
+            return lease;
+        }
+        public List<Vehicle> ListRentedVehicles()
+        {
+            List<Vehicle> rentedVehicles = new List<Vehicle>();
+            Vehicle vehicle = null;
+            SqlConnection con = null;
+            SqlCommand command = null;
+            string query = "SELECT * FROM cars WHERE status = 'not available'";
+
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    command = new SqlCommand(query, con);
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        vehicle = new Vehicle();
+                        vehicle.VehicleId = reader.GetInt32(0);
+                        vehicle.Make = reader.GetString(1);
+                        vehicle.Model = reader.GetString(2);
+                        vehicle.Year = reader.GetString(3);
+                        vehicle.DailyRate = reader.GetDecimal(4);
+                        vehicle.Status = reader.GetString(5);
+                        vehicle.PassengerCapacity = reader.GetDecimal(6);
+                        vehicle.EngineCapacity = reader.GetDecimal(7);
+
+                        rentedVehicles.Add(vehicle);
+                    }
+                    Console.WriteLine("All Rented cars are listed");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching rented vehicles: " + ex.Message);
+                throw;
+            }
+
+            return rentedVehicles;
+        }
+        //Payment Handling
+        public void RecordPayment(Lease lease, decimal amount)
+        {
+            int rowsAffected = 0;
+            int newPaymentId = 1;
+            string query = "INSERT INTO Payment (payment_id, lease_id, payment_date, amount) VALUES (@pid, @lid, @pdate, @amt)";
+
+            try
+            {
+                string constring = DBPropertyUtil.GetConnectionString("db.properties");
+                using (con = DBConnUtil.GetConnection(constring))
+                {
+                    // Implement this method to fetch/generate new payment ID
+                    command = new SqlCommand(query, con);
+                    command.Parameters.Add(new SqlParameter("@pid", newPaymentId));
+                    command.Parameters.Add(new SqlParameter("@lid", lease.LeaseId));
+                    command.Parameters.Add(new SqlParameter("@pdate", DateTime.Now));
+                    command.Parameters.Add(new SqlParameter("@amt", amount));
+
+                    rowsAffected = command.ExecuteNonQuery();
+                    Console.WriteLine("Payment has been recorded.");
+                }
+
+                if (rowsAffected <= 0)
+                {
+                    Console.WriteLine("Payment was not recorded.");
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new PaymentException("Error in recording the payment: " + ex.Message); // You can define PaymentException
+            }
+        }
+    }
+}
+// Interface
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CaseStudy.Entity;
+
+namespace CaseStudy.Dao
+{
+     interface ICarLeaseRepository
+     { 
+        void AddVehicle(Vehicle vehicle);
+        void RemoveVehicle(int vehicleId);
+        List<Vehicle> ListAvailableVehicles();
+        List<Vehicle> ListRentedVehicles();
+        Vehicle FindVehicleById(int  vehicleId);
+
+
+        void AddCustomer (Customer customer);
+        void RemoveCustomer (int customerId);
+        List<Customer> ListCustomers();
+        Customer FindCustomerById(int customerId);
+
+        Lease CreateLease(int leaseID, int customerId, int vehicleId, DateTime startDate, DateTime endDate, string type);
+        Lease ReturnVehicle(int leaseId);
+        List<Lease> ListActiveLeases();
+        List<Lease> ListLeaseHistory();
+
+        void RecordPayment(Lease lease, decimal amount);
+
+     }
+}
+// Main Program
+
+using CaseStudy.Dao;
+using CaseStudy.Entity;
+using CaseStudy.myexception;
+using System;
+using System.Runtime.ConstrainedExecution;
+using System.Security.Cryptography.X509Certificates;
+
+namespace CarRentalSystem.main
+{
+    class MainModule
+    {
+        static void Main(string[] args)
+        {
+            ICarLeaseRepository repo = new CarLeasesRepositoryImpl();
+            bool running = true;
+            int customercounter = 1;
+            int vehiclecounter = 1;
+
+            while (running)
+            {
+                Console.WriteLine("\n=== Car Rental System ===");
+                Console.WriteLine("1. Add Vehicle");
+                Console.WriteLine("2. Remove Vehicle");
+                Console.WriteLine("3. Find Vehicle by ID");
+                Console.WriteLine("4. List Available Vehicles");
+                Console.WriteLine("5. Add Customer");
+                Console.WriteLine("6. Remove Customer");
+                Console.WriteLine("7. Find Customer by ID");
+                Console.WriteLine("8. List All Customers");
+                Console.WriteLine("9. Create Lease");
+                Console.WriteLine("10. List Active Leases");
+                Console.WriteLine("11. Lease History");
+                Console.WriteLine("12. Return Vehicle");
+                Console.WriteLine("13. Record Payment");
+                Console.WriteLine("14. Exit");
+                Console.Write("Enter your choice: ");
+
+
+                string input = Console.ReadLine();
+
+                switch (input)
+                {
+                    case "1":
+                        Vehicle newVehicle = new Vehicle();
+                        Console.Write("Vehicle ID: ");
+                        newVehicle.VehicleId = int.Parse(Console.ReadLine());
+                        Console.Write("Make: ");
+                        newVehicle.Make = Console.ReadLine();
+                        Console.Write("Model: ");
+                        newVehicle.Model = Console.ReadLine();
+                        Console.Write("Year: ");
+                        newVehicle.Year = Console.ReadLine();
+                        Console.Write("Daily Rate: ");
+                        newVehicle.DailyRate = decimal.Parse(Console.ReadLine());
+                        Console.Write("Status (available/notavailable): ");
+                        newVehicle.Status = Console.ReadLine();
+                        Console.Write("Passenger Capacity: ");
+                        newVehicle.PassengerCapacity = decimal.Parse(Console.ReadLine());
+                        Console.Write("Engine Capacity: ");
+                        newVehicle.EngineCapacity = decimal.Parse(Console.ReadLine());
+
+                        repo.AddVehicle(newVehicle);
+                        break;
+
+                    case "2":
+                        Console.Write("Enter Vehicle ID to remove: ");
+                        int removeVehicleId = int.Parse(Console.ReadLine());
+                        repo.RemoveVehicle(removeVehicleId);
+                        break;
+
+                    case "3":
+                        Console.Write("Enter Vehicle ID to find: ");
+                        int findVehicleId = int.Parse(Console.ReadLine());
+                        Vehicle foundVehicle = repo.FindVehicleById(findVehicleId);
+                        if (foundVehicle != null)
+                        {
+                            Console.WriteLine($"Vehicle: {foundVehicle.Make} {foundVehicle.Model}, Year: {foundVehicle.Year}, Status: {foundVehicle.Status}");
+                        }
+                        break;
+
+                    case "4":
+                        try
+                        {
+                            List<Vehicle> availableVehicles = repo.ListAvailableVehicles();
+                            foreach (var v in availableVehicles)
+                            {
+                                Console.WriteLine($"{v.VehicleId} - {v.Make} {v.Model} ({v.Year}) - ${v.DailyRate}/day - {v.Status}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Failed to list vehicles: " + ex.Message);
+                        }
+                        break;
+         
+                    case "5":
+                        try
+                        {
+                            Customer newCustomer = new Customer();
+                            Console.Write("Customer ID: ");
+                            newCustomer.CustomerId = int.Parse(Console.ReadLine());
+                            Console.Write("First Name: ");
+                            newCustomer.FirstName = Console.ReadLine();
+                            Console.Write("Last Name: ");
+                            newCustomer.LastName = Console.ReadLine();
+                            Console.Write("Email: ");
+                            newCustomer.Email = Console.ReadLine();
+                            Console.Write("Phone Number: ");
+                            newCustomer.PhoneNumber = decimal.Parse(Console.ReadLine());
+
+                            repo.AddCustomer(newCustomer);
+                        }
+                        catch (FormatException fe)
+                        {
+                            Console.WriteLine("Invalid input format: " + fe.Message);
+                        }
+                        catch (CarNotFoundException ce)
+                        {
+                            Console.WriteLine(ce.Message);
+                        }
+                        break;
+
+                    case "6":
+                        try
+                        {
+                            Console.Write("Enter Customer ID to remove: ");
+                            int removeCustomerId = int.Parse(Console.ReadLine());
+                            repo.RemoveCustomer(removeCustomerId);
+                        }
+                        catch (FormatException fe)
+                        {
+                            Console.WriteLine("Invalid input format: " + fe.Message);
+                        }
+                        catch (CarNotFoundException ce)
+                        {
+                            Console.WriteLine(ce.Message);
+                        }
+                        break;
+
+                    case "7":
+                        try
+                        {
+                            Console.Write("Enter Customer ID to find: ");
+                            int findCustomerId = int.Parse(Console.ReadLine());
+                            Customer foundCustomer = repo.FindCustomerById(findCustomerId);
+                            if (foundCustomer != null)
+                            {
+                                Console.WriteLine($"Customer: {foundCustomer.FirstName} {foundCustomer.LastName}, Email: {foundCustomer.Email}, Phone: {foundCustomer.PhoneNumber}");
+                            }
+                        }
+                        catch (CarNotFoundException ce)
+                        {
+                            Console.WriteLine(ce.Message);
+                        }
+                        break;
+
+                    case "8":
+                        try
+                        {
+                            List<Customer> allCustomers = repo.ListCustomers();
+                            foreach (var c in allCustomers)
+                            {
+                                Console.WriteLine($"{c.CustomerId} - {c.FirstName} {c.LastName} - {c.Email}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error fetching customer list: " + ex.Message);
+                        }
+                        break;
+
+                    case "9":
+                        try
+                        {
+                            Console.Write("Enter Lease ID: ");
+                            int leaseId = int.Parse(Console.ReadLine());
+
+                            Console.Write("Enter Vehicle ID: ");
+                            int vehicleId = int.Parse(Console.ReadLine());
+
+                            Console.Write("Enter Customer ID: ");
+                            int customerId = int.Parse(Console.ReadLine());
+
+                            Console.Write("Enter Start Date (yyyy-mm-dd): ");
+                            DateTime startDate = DateTime.Parse(Console.ReadLine());
+
+                            Console.Write("Enter End Date (yyyy-mm-dd): ");
+                            DateTime endDate = DateTime.Parse(Console.ReadLine());
+
+                            Console.Write("Enter Lease Type: ");
+                            string type = Console.ReadLine();
+
+                            Lease lease = repo.CreateLease(leaseId, vehicleId, customerId, startDate, endDate, type);
+                        }
+                        catch (LeaseNotFoundException ex)
+                        {
+                            Console.WriteLine("Lease Error: " + ex.Message);
+                        }
+                        catch (FormatException)
+                        {
+                            Console.WriteLine("Invalid date or number format.");
+                        }
+                        break;
+
+                    case "10":
+                        try
+                        {
+                            var leases = repo.ListActiveLeases();
+                            foreach (var lease in leases)
+                            {
+                                Console.WriteLine($"Lease ID: {lease.LeaseId}, Vehicle ID: {lease.VehicleId}, Customer ID: {lease.CustomerId}, Type: {lease.Type}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error listing active leases: " + ex.Message);
+                        }
+                        break;
+
+                    case "11":
+                        try
+                        {
+                            var leases = repo.ListLeaseHistory();
+                            foreach (var lease in leases)
+                            {
+                                Console.WriteLine($"Lease ID: {lease.LeaseId}, Vehicle ID: {lease.VehicleId}, Customer ID: {lease.CustomerId}, Type: {lease.Type}, StartDate: {lease.StartDate}, EndDate: {lease.EndDate}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error listing lease history: " + ex.Message);
+                        }
+                        break;
+
+                    case "12":
+                        try
+                        {
+                            Console.Write("Enter Lease ID to return vehicle: ");
+                            int leaseId = int.Parse(Console.ReadLine());
+
+                            Lease lease = repo.ReturnVehicle(leaseId);
+                            Console.WriteLine("Vehicle returned for Lease ID: " + lease.LeaseId);
+                        }
+                        catch (CarNotFoundException ex)
+                        {
+                            Console.WriteLine("Car error: " + ex.Message);
+                        }
+                        catch (LeaseNotFoundException ex)
+                        {
+                            Console.WriteLine("Lease not found: " + ex.Message);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error returning vehicle: " + ex.Message);
+                        }
+                        break;
+
+                    case "13":
+                        try
+                        {
+                            Console.Write("Enter Lease ID for payment: ");
+                            int leaseId = int.Parse(Console.ReadLine());
+
+                            Console.Write("Enter Payment Amount: ");
+                            decimal amount = decimal.Parse(Console.ReadLine());
+
+                            Lease lease = repo.ReturnVehicle(leaseId); // Fetch lease info
+                            repo.RecordPayment(lease, amount);
+                        }
+                        catch (PaymentException ex)
+                        {
+                            Console.WriteLine("Payment error: " + ex.Message);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Error recording payment: " + ex.Message);
+                        }
+                        break;
+                    case "14":
+                        running = false;
+                        break;
+
+                    default:
+                        Console.WriteLine("Invalid option. Try again.");
+                        break;
+                }
+            }
+
+            Console.WriteLine("Exiting... Thank you for using the Car Rental System.");
+        }
+    }
+}
+
+
+    
+
