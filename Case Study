@@ -1157,6 +1157,162 @@ namespace CarRentalSystem.main
         }
     }
 }
+// NUnit Test Cases
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CaseStudy;
+using CaseStudy.Dao;
+using CaseStudy.Entity;
+using CaseStudy.myexception;
+
+namespace TestCase
+{
+    [TestFixture]
+    internal class TestCases
+    {
+        CarLeasesRepositoryImpl car;
+
+        [SetUp]
+        public void InitialiZe()
+        {
+            car = new CarLeasesRepositoryImpl();
+        }
+        [TearDown]
+        public void Cleanup()
+        {
+            car = null;
+        }
+        [Test]
+        public void TestAddCar()
+        {
+            Vehicle vehicle = new Vehicle(8, "Toyota", "innova", "2016", 3000, "available", 5, 2000);
+            car.AddVehicle(vehicle);
+            var search = car.FindVehicleById(3);
+            Assert.IsNotNull(search);
+
+        }
+        [Test]
+        public void TestRemoveCar()
+        {
+            Vehicle vehicle = new Vehicle(6, "Toyota", "innova", "2016", 3000, "available", 5, 2000);
+            car.AddVehicle(vehicle);
+            car.RemoveVehicle(6);
+            var check = car.FindVehicleById(6);
+            Assert.IsNull(check);
+
+        }
+        [Test]
+        public void TestCreateLease()
+        {
+            int leaseId = 3;
+            int vehicleId = 3;
+            int customerId = 1;
+            DateTime startDate = DateTime.Now;
+            DateTime EndDate = DateTime.Today.AddDays(2);
+            string type = "Daily";
+
+            Lease lease = car.CreateLease(leaseId, vehicleId, customerId, startDate, EndDate, type);
+            Assert.NotNull(lease);
+            Assert.AreEqual(lease.LeaseId, leaseId);
+
+        }
+        [Test]
+        public void TestAddCustomer()
+        {
+            Customer customer = new Customer(6, "Sakthi", "Vel", "sakthivel@gmail.com", 9638527415);
+            car.AddCustomer(customer);
+            Customer see = car.FindCustomerById(3);
+            Assert.IsNotNull(see);
+        }
+        [Test]
+        public void TestRemoveCustomer()
+        {
+            Customer customer = new Customer(7, "Sakthi", "Vel", "sakthivel@gmail.com", 9638527415);
+            car.AddCustomer(customer);
+            car.RemoveCustomer(7);
+            Customer customer1 = car.FindCustomerById(7);
+            Assert.IsNull(customer1);
+        }
+        [Test]
+        public void ListLeaseHistoryShouldReturnLeases()
+        {
+            List<Lease> leases = car.ListLeaseHistory();
+            Assert.IsNotNull(leases);
+
+        }
+        [Test]
+        public void ListAvailableVehiclesShouldReturnAvailableVehicles()
+        {
+            List<Vehicle> availablevehicles = car.ListAvailableVehicles();
+            Assert.IsNotNull(availablevehicles);
+        }
+        [Test]
+        public void ListCustomersShouldReturnListOfCustomers()
+        {
+            List<Customer> customers = car.ListCustomers();
+            Assert.IsNotNull(customers);
+        }
+        [Test]
+        public void GetVehicleByIdShouldReturnVehicle()
+        {
+            Vehicle vehicle = car.FindVehicleById(1);
+            Assert.That(vehicle.VehicleId, Is.EqualTo(1));  
+        }
+        [Test]
+        public void GetCustomerByIdShouldReturnCustomer()
+        {
+            Customer customer = car.FindCustomerById(1);
+            Assert.That(customer.CustomerId, Is.EqualTo(1));
+        }
+        [Test]
+        public void TestRemoveNonExistentCar()
+        {
+            int vehicleID = 10;
+            var ex = Assert.Throws<CarNotFoundException>(() =>
+            {
+                car.RemoveVehicle(vehicleID);
+            });
+            Assert.That(ex.Message, Does.Contain ("Error in Deleting the Car"));
+        }
+        [Test]
+        public void TestRemoveNonExistentCustomer()
+        {
+            int customerID = 10;
+            var ex = Assert.Throws<CustomerNotFoundException>(() =>
+            {
+                car.RemoveCustomer(customerID);
+            });
+            Assert.That(ex.Message, Does.Contain("Error in Deleting the Customer"));
+        }
+        [Test]
+        public void TestGetVehicleByIdWithNonExistentVehicleId()
+        {
+            int vehicleID = 10;
+            var ex = Assert.Throws<CarNotFoundException>(() =>
+            {
+                car.FindVehicleById(vehicleID);
+            });
+            Assert.That(ex.Message, Does.Contain("Error in Finding the Car"));
+
+        }
+        [Test]
+        public void TestGetCustomerByIdWithNonExistentCustomerId()
+        {
+            int customerId = 10;
+            var ex = Assert.Throws<CustomerNotFoundException>(() =>
+            {
+                car.FindCustomerById(customerId);
+            });
+            Assert.That(ex.Message, Does.Contain("Error in Finding the Customer"));
+
+
+        }
+    }
+}
+
 
 
     
