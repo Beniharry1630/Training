@@ -1332,6 +1332,177 @@ namespace ADOAsgn.Models
         }
     }
 }
+// NUint Test Cases
+using Assignment1.Data;
+using Assignment1.Models;
+
+namespace TestProject1
+{
+    [TestFixture]
+    public class Tests
+    {
+        ManagementDao dao;
+
+        [SetUp]
+        public void Initialize()
+        {
+            dao = new ManagementDao();
+        }
+
+        [TearDown]
+        public void CleanUp()
+        {
+            dao = null;
+        }
+        [Test]
+        public void CheckWhetherStudentIsAddedCorrectly()
+        {
+            var student = new Student
+            {
+                StudentId = 11,
+                FirstName = "Rahul",
+                LastName = "Kumar",
+                DateOfBirth = new DateTime(2003, 11, 14),
+                Email = "rahulkumar@gmail.com",
+                PhoneNumber = "8958741235"
+            };
+            int result = dao.AddStudent(student);
+            //Assert
+            Assert.IsTrue(result == 1);
+        }
+        [Test]
+        public void CheckWhetherCourseIsAddedCorrectly()
+        {
+            var course = new Course
+            {
+                CourseId = 1,
+                CourseCode = "PH1",
+                CourseName = "Physics",
+                Instructor = "Mr.Kumaran"
+            };
+            int result = dao.AddCourse(course);
+            //Assert
+            Assert.IsTrue(result == 1);
+        }
+        [Test]
+        public void CheckWhetherEnrollmentAddedCorrectly()
+        {
+            var student = new Student { StudentId = 11 };
+            var course = new Course { CourseId = 1 };
+            var enrollment = new Enrollment
+            {
+                EnrollmentId = 1,
+                Student = student,
+                Course = course,
+                EnrollmentDate = DateTime.Now.ToString("2024-11-15")
+            };
+            int result = dao.AddEnrollment(enrollment);
+
+            Assert.IsTrue(result == 1);
+        }
+        [Test]
+        public void CheckWhetherTeacherIsAddedCorrectly()
+        {
+            var teacher = new Teacher
+            {
+                TeacherId = 1,
+                TeacherName = "Mr.Kumaran",
+                Email = "kumaran@gmail.com"
+            };
+            int result = dao.AddTeacher(teacher);
+            //Assert
+            Assert.IsTrue(result == 1);
+        }
+        [Test]
+        public void CheckWhetherPaymentIsAddedCorrectly()
+        {
+            var student = new Student { StudentId = 11 };
+            var payment = new Payment
+            {
+                PaymentId = 1,
+                Student = student,
+                Amount = 6000,
+                PaymentDate = "2025-03-15"
+
+            };
+            int result = dao.AddPayment(payment);
+            Assert.IsTrue(result == 1);
+        }
+        [Test]
+        public void ListOfStudentsIsNotNull()
+        {
+            List<Student> students = dao.GetAllStudents();
+
+            Assert.That(students, Is.Not.Null);
+            Assert.That(students.Count, Is.GreaterThanOrEqualTo(0));
+        }
+        [Test]
+        public void ListOfCoursessIsNotNull()
+        {
+            List<Course> courses = dao.GetAllCourses();
+
+            Assert.That(courses, Is.Not.Null);
+            Assert.That(courses.Count, Is.GreaterThanOrEqualTo(0));
+        }
+        [Test]
+        public void ListOfEnrollmentsIsNotNull()
+        {
+            List<Enrollment> enrollments = dao.GetAllEnrollments();
+
+            Assert.That(enrollments, Is.Not.Null);
+            Assert.That(enrollments.Count, Is.GreaterThanOrEqualTo(0));
+        }
+        [Test]
+        public void ListOfTeachersIsNotNull()
+        {
+            List<Teacher> teachers = dao.GetAllTeachers();
+
+            Assert.That(teachers, Is.Not.Null);
+            Assert.That(teachers.Count, Is.GreaterThanOrEqualTo(0));
+        }
+        [Test]
+        public void ListOfPaymentsIsNotNull()
+        {
+            List<Payment> payments = dao.GetAllPayments();
+
+            Assert.That(payments, Is.Not.Null);
+            Assert.That(payments.Count, Is.GreaterThanOrEqualTo(0));
+        }
+        [Test]
+        public void GetStudentByIdShouldReturnStudent()
+        {
+            var student = dao.GetStudentById(11);
+            Assert.That(student.StudentId, Is.EqualTo(1));
+        }
+        [Test]
+        public void GetCourseByIdShouldReturnCourse()
+        {
+            var student = dao.GetCourseById(1);
+            Assert.That(student.CourseId, Is.EqualTo(1));
+        }
+        [Test]
+        public void GetEnrollmentByIdShouldReturnEnrollment()
+        {
+            var student = dao.GetEnrollmentById(1);
+            Assert.That(student.EnrollmentId, Is.EqualTo(1));
+        }
+        [Test]
+        public void GetTeacherByIdShouldReturnTeacher()
+        {
+            var student = dao.GetTeacherById(1);
+            Assert.That(student.TeacherId, Is.EqualTo(1));
+        }
+        [Test]
+        public void GetPaymentByIdShouldReturnPayment()
+        {
+            var student = dao.GetPaymentById(1);
+            Assert.That(student.PaymentId, Is.EqualTo(1));
+        }
+
+    }
+}
+
+
 
 
 
